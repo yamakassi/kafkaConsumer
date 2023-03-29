@@ -1,0 +1,70 @@
+version: '2'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    expose:
+      - "2181"
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    expose:
+      - "9093"
+    env_file:
+      - .env
+    environment:
+
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS_ENABLE}
+      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_ADVERTISED_LISTENERS}
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: ${KAFKA_LISTENER_SECURITY_PROTOCOL_MAP}
+      KAFKA_LISTENERS: ${KAFKA_LISTENERS}
+      KAFKA_ZOOKEEPER_CONNECT: ${KAFKA_ZOOKEEPER_CONNECT}
+      KAFKA_INTER_BROKER_LISTENER_NAME: ${KAFKA_INTER_BROKER_LISTENER_NAME}
+      #KAFKA_REPLICATION_FACTOR: 3
+    
+    depends_on:
+      - zookeeper
+    volumes:
+      - ./:/etc/kafka
+  consumer:
+    image: "myapp"
+    build: /consumer
+    container_name: consumer
+    env_file:
+      - .env
+    environment:
+      - TOPIC_NAME=${TOPIC_NAME}
+
+    depends_on:
+      - db
+      - kafka
+    ports:
+      - "8081:8081"
+  producer:
+    image: "myapp2"
+    build: /producer
+    container_name: producer
+    depends_on:
+      - kafka
+    expose:
+      - "8080"
+    env_file:
+      - .env
+    environment:
+      - TOPIC_NAME=${TOPIC_NAME}
+  db:
+    image: 'postgres:13.1-alpine'
+  
+    container_name: db
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${USERNAME_DB}
+      - POSTGRES_PASSWORD=${PASSWORD_DB}
+      - POSTGRES_DB=${POSTGRES_DB}
+    expose:
+      - "5432"
+    volumes:
+      - /db/schema.sql:/docker-entrypoint-initdb.d
+      
