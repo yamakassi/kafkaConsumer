@@ -1,0 +1,51 @@
+config:
+  topic:
+    name: ${TOPIC_NAME}
+example:
+  kafka:
+    consumer-enabled: ${consumer-enabled:true}
+
+spring:
+
+  datasource:
+    url: ${URL_DB}
+    username: ${USERNAME_DB}
+    password: ${PASSWORD_DB}
+
+    driver-class-name:
+  kafka:
+
+    bootstrap-servers: ${kafka_bootstrap_servers:kafka:9093}
+    properties:
+      security:
+        security:
+          spring.json.add.type.headers: false
+          spring.json.trusted.packages: '*'
+        protocol: PLAINTEXT
+    consumer:
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      auto-offset-reset: earliest
+      group-id: example
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      max-poll-records: 1
+      fetch-max-wait: 36000
+      enable-auto-commit: false
+      client-id: example
+      properties:
+          # Delegate deserializers
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+    producer:
+
+      client-id: example
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer:  org.springframework.kafka.support.serializer.JsonSerializer
+      retries: 2
+
+    listener:
+      poll-timeout: 1800000
+      concurrency: 1
+      ack-mode: manual_immediate
+
+server:
+  port: 8081
